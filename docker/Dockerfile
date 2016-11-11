@@ -49,7 +49,7 @@ RUN rosdep update
 RUN echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc
 
 # Install DUNE.
-RUN git clone git://github.com/LSTS/dune.git && \
+RUN git clone https://github.com/LSTS/dune.git && \
 cd dune && \
 mkdir build && \
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/opt/lsts/dune ../dune && \
