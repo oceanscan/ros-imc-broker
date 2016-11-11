@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="ros_imc_broker" type="ros_imc_broker_node" name="ros_imc_broker_node" output="screen">
+    <param name="server_addr" value="127.0.0.1"/>
+    <param name="server_port" value="32603"/>
+  </node>
+  <node pkg="ros_imc_broker" type="follow_reference_node" name="follow_reference_node" output="screen"/>
+</launch>
