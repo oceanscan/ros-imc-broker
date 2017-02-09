@@ -51,6 +51,7 @@ RUN echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc
 # Install DUNE.
 RUN git clone https://github.com/LSTS/dune.git && \
 cd dune && \
+git checkout dune-2017.01.0-dmsmw && \
 mkdir build && \
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/opt/lsts/dune ../dune && \
 ninja install && \
