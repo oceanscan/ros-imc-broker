@@ -38,6 +38,7 @@ shell()
            -a stdin \
            -a stdout \
            -v "$VOLUME:$VOLUME" \
+           -v "$VOLUME/dune-log:/opt/lsts/dune/log" \
            -t "$TAG:$VERSION"
 }
 
