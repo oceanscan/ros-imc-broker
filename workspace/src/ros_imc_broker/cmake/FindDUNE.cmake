@@ -24,8 +24,10 @@
 set(_DUNE_SEARCH_PATHS)
 
 if(DUNE_ROOT)
-  set(_DUNE_SEARCH_ROOT PATHS ${DUNE_ROOT} NO_DEFAULT_PATH)
-  list(APPEND _DUNE_SEARCH_PATHS _DUNE_SEARCH_ROOT)
+  unset(DUNE_INCLUDE_DIR CACHE)
+  unset(DUNE_LIBRARY)
+
+  list(APPEND _DUNE_SEARCH_PATHS ${DUNE_ROOT})
 endif()
 list(APPEND _DUNE_SEARCH_PATHS "/opt/lsts/dune" "/usr" "/usr/local")
 
@@ -35,10 +37,12 @@ foreach(path ${_DUNE_SEARCH_PATHS})
 endforeach()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(DUNE DEFAULT_MSG
-  DUNE_LIBRARY DUNE_INCLUDE_DIR)
+find_package_handle_standard_args(DUNE DEFAULT_MSG DUNE_LIBRARY DUNE_INCLUDE_DIR)
 
 mark_as_advanced(DUNE_INCLUDE_DIR DUNE_LIBRARY)
 
 set(DUNE_LIBRARIES ${DUNE_LIBRARY})
 set(DUNE_INCLUDE_DIRS ${DUNE_INCLUDE_DIR})
+
+message(STATUS "DUNE includes: ${DUNE_INCLUDE_DIR}")
+message(STATUS "DUNE library: ${DUNE_LIBRARY}")
