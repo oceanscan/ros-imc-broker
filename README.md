@@ -48,3 +48,12 @@ This command will start one instance of the DUNE's LAUV simulator, the ROS
 IMC broker, and the Follow Reference Controller node. This simple
 controller uses DUNE's high-level control layer to move the vehicle around
 a square.
+
+Updating IMC definitions
+========================
+
+To recreate the bindings for custom IMC messages, the bindings needs to be created using the python-script `imc-translator.py`. Example command:
+```
+cd workspace/translator &&
+python imc-translator.py --xml=<path-to>/IMC.xml --output=../src/ros_imc_broker/include/ros_imc_broker/ImcTypes.hpp
+```
