@@ -25,9 +25,6 @@ project(ros_imc_broker)
 # Additional CMake scripts and modules.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-# Find DUNE headers and libraries.
-find_package(DUNE REQUIRED)
-
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -126,7 +123,6 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES ${DUNE_LIBRARIES}
   CATKIN_DEPENDS roscpp std_msgs message_runtime
   DEPENDS system_lib
 )
@@ -141,7 +137,6 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${DUNE_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -155,8 +150,8 @@ include_directories(
 # add_dependencies(ros_imc_broker ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(ros_imc_broker_node src/broker_node.cpp)
-add_executable(follow_reference_node src/follow_reference_node.cpp)
+add_executable(ros_imc_broker_node src/broker_node.cpp include/IMC/Base/Factory.cpp)
+add_executable(follow_reference_node src/follow_reference_node.cpp include/IMC/Base/Factory.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -165,12 +160,10 @@ add_executable(follow_reference_node src/follow_reference_node.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(ros_imc_broker_node
   ${catkin_LIBRARIES}
-  ${DUNE_LIBRARIES}
 )
 
 target_link_libraries(follow_reference_node
   ${catkin_LIBRARIES}
-  ${DUNE_LIBRARIES}
 )
 
 #############

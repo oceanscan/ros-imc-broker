@@ -22,11 +22,15 @@
 #ifndef ROS_IMC_BROKER_FOLLOW_REFERENCE_CONTROLLER_HPP_INCLUDED_
 #define ROS_IMC_BROKER_FOLLOW_REFERENCE_CONTROLLER_HPP_INCLUDED_
 
+// ISO C++ headers.
+#include <queue>
+
 // ROS headers.
 #include <ros/ros.h>
 
 // DUNE headers.
-#include <DUNE/DUNE.hpp>
+#include <IMC/Spec/PlanControlState.hpp>
+#include <IMC/Spec/FollowRefState.hpp>
 
 // Local headers.
 #include <ros_imc_broker/SimpleController.hpp>
@@ -42,35 +46,35 @@ namespace ros_imc_broker
       state_(SM_START)
     {
       // Subscribers.
-      subscribe<FollowReferenceController, DUNE::IMC::PlanControlState>("IMC/In/PlanControlState", this);
-      subscribe<FollowReferenceController, DUNE::IMC::FollowRefState>("IMC/In/FollowRefState", this);
+      subscribe<FollowReferenceController, IMC::PlanControlState>("IMC/In/PlanControlState", this);
+      subscribe<FollowReferenceController, IMC::FollowRefState>("IMC/In/FollowRefState", this);
 
       // Publishers.
-      plan_control_pub_ = nh.advertise<DUNE::IMC::PlanControl>("IMC/Out/PlanControl", 1000);
-      reference_pub_ = nh.advertise<DUNE::IMC::Reference>("IMC/Out/Reference", 1000);
+      plan_control_pub_ = nh.advertise<IMC::PlanControl>("IMC/Out/PlanControl", 1000);
+      reference_pub_ = nh.advertise<IMC::Reference>("IMC/Out/Reference", 1000);
     }
 
     void
     addReference(double lat, double lon, double depth_or_alt, double speed)
     {
-      boost::shared_ptr<DUNE::IMC::Reference> ref(new DUNE::IMC::Reference);
+      boost::shared_ptr<IMC::Reference> ref(new IMC::Reference);
 
       // Position reference.
       ref->setDestination(getSystemId());
       ref->lat = lat;
       ref->lon = lon;
-      ref->flags = DUNE::IMC::Reference::FLAG_LOCATION | DUNE::IMC::Reference::FLAG_SPEED | DUNE::IMC::Reference::FLAG_Z;
+      ref->flags = IMC::Reference::FLAG_LOCATION | IMC::Reference::FLAG_SPEED | IMC::Reference::FLAG_Z;
 
       // Vertical reference.
-      DUNE::IMC::DesiredZ z_ref;
+      IMC::DesiredZ z_ref;
       z_ref.value = std::abs(depth_or_alt);
-      z_ref.z_units = depth_or_alt < 0 ? DUNE::IMC::Z_DEPTH : DUNE::IMC::Z_ALTITUDE;
+      z_ref.z_units = depth_or_alt < 0 ? IMC::Z_DEPTH : IMC::Z_ALTITUDE;
       ref->z.set(z_ref);
 
       // Speed reference.
-      DUNE::IMC::DesiredSpeed speed_ref;
+      IMC::DesiredSpeed speed_ref;
       speed_ref.value = speed;
-      speed_ref.speed_units = DUNE::IMC::SUNITS_METERS_PS;
+      speed_ref.speed_units = IMC::SUNITS_METERS_PS;
       ref->speed.set(speed_ref);
 
       references_.push(ref);
@@ -88,11 +92,11 @@ namespace ros_imc_broker
           break;
 
         case SM_GUIDE:
-          if (follow_ref_state_.state == DUNE::IMC::FollowRefState::FR_GOTO)
+          if (follow_ref_state_.state == IMC::FollowRefState::FR_GOTO)
           {
             guide();
           }
-          else if (follow_ref_state_.state == DUNE::IMC::FollowRefState::FR_TIMEOUT)
+          else if (follow_ref_state_.state == IMC::FollowRefState::FR_TIMEOUT)
           {
             ROS_ERROR("reference timeout");
             state_ = SM_IDLE;
@@ -114,7 +118,7 @@ namespace ros_imc_broker
     }
 
     void
-    on(const DUNE::IMC::PlanControlState& msg)
+    on(const IMC::PlanControlState& msg)
     {
       if (!isFromControlledSystem(msg))
         return;
@@ -123,7 +127,7 @@ namespace ros_imc_broker
     }
 
     void
-    on(const DUNE::IMC::FollowRefState& msg)
+    on(const IMC::FollowRefState& msg)
     {
       if (!isFromControlledSystem(msg))
         return;
@@ -159,11 +163,11 @@ namespace ros_imc_broker
     //! Executing plan id.
     std::string plan_state_id_;
     //! Queue of pending references.
-    std::queue<boost::shared_ptr<DUNE::IMC::Reference> > references_;
+    std::queue<boost::shared_ptr<IMC::Reference> > references_;
     //! Current reference.
-    boost::shared_ptr<DUNE::IMC::Reference> reference_;
+    boost::shared_ptr<IMC::Reference> reference_;
     //! Last received follow reference state.
-    DUNE::IMC::FollowRefState follow_ref_state_;
+    IMC::FollowRefState follow_ref_state_;
     //! True if follow reference state changed.
     bool follow_ref_state_changed_;
 
@@ -190,23 +194,23 @@ namespace ros_imc_broker
       plan_state_id_.clear();
       plan_id_ = "follow_tno";
 
-      DUNE::IMC::PlanControl pc;
+      IMC::PlanControl pc;
       pc.plan_id = plan_id_;
-      pc.op = DUNE::IMC::PlanControl::PC_START;
-      pc.type = DUNE::IMC::PlanControl::PC_REQUEST;
+      pc.op = IMC::PlanControl::PC_START;
+      pc.type = IMC::PlanControl::PC_REQUEST;
       pc.request_id = 1000;
 
-      DUNE::IMC::FollowReference man;
+      IMC::FollowReference man;
       man.control_src = 0xFFFF;
       man.control_ent = 255;
       man.loiter_radius = 20;
       man.timeout = 0.0;
 
-      DUNE::IMC::PlanManeuver pm;
+      IMC::PlanManeuver pm;
       pm.maneuver_id = "1";
       pm.data.set(man);
 
-      DUNE::IMC::PlanSpecification ps;
+      IMC::PlanSpecification ps;
       ps.plan_id = pc.plan_id;
       ps.start_man_id = pm.maneuver_id;
       ps.maneuvers.push_back(pm);
@@ -222,10 +226,10 @@ namespace ros_imc_broker
       if (references_.empty())
       {
         ROS_INFO("no more references, maneuver done");
-        reference_ = boost::shared_ptr<DUNE::IMC::Reference>(new DUNE::IMC::Reference);
+        reference_ = boost::shared_ptr<IMC::Reference>(new IMC::Reference);
         reference_->setSource(0xFFFF);
         reference_->setDestination(getSystemId());
-        reference_->flags = DUNE::IMC::Reference::FLAG_MANDONE;
+        reference_->flags = IMC::Reference::FLAG_MANDONE;
         guide();
         reference_.reset();
         return false;

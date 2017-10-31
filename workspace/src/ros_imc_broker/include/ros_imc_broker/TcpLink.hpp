@@ -30,6 +30,9 @@
 // Boost headers.
 #include <boost/asio.hpp>
 
+// IMC headers.
+#include <IMC/Base/Parser.hpp>
+
 // ROS headers.
 #include <ros/ros.h>
 
@@ -46,7 +49,7 @@ namespace ros_imc_broker
   public:
     //! Constructor.
     //! @param[in] recv_handler handler function for received messages.
-    TcpLink(boost::function<void (DUNE::IMC::Message*)> recv_handler):
+    TcpLink(boost::function<void (IMC::Message*)> recv_handler):
       socket_(io_service_),
       recv_handler_(recv_handler),
       connected_(false)
@@ -68,7 +71,7 @@ namespace ros_imc_broker
       size_t rv = socket_.read_some(boost::asio::buffer(in_buffer_, sizeof(in_buffer_)));
       for (size_t i = 0; i < rv; ++i)
       {
-        DUNE::IMC::Message* m = parser_.parse((uint8_t)in_buffer_[i]);
+        IMC::Message* m = parser_.parse((uint8_t)in_buffer_[i]);
         if (m)
         {
           recv_handler_(m);
@@ -78,9 +81,9 @@ namespace ros_imc_broker
     }
 
     void
-    write(const DUNE::IMC::Message* message)
+    write(const IMC::Message* message)
     {
-      uint16_t rv = DUNE::IMC::Packet::serialize(message, (uint8_t*)out_buffer_, sizeof(out_buffer_));
+      uint16_t rv = IMC::Packet::serialize(message, (uint8_t*)out_buffer_, sizeof(out_buffer_));
 
       try
       {
@@ -133,7 +136,7 @@ namespace ros_imc_broker
     //! ASIO I/O service.
     boost::asio::io_service io_service_;
     //! Callback for received IMC messages.
-    boost::function<void (DUNE::IMC::Message*)> recv_handler_;
+    boost::function<void (IMC::Message*)> recv_handler_;
     //! TCP socket.
     boost::asio::ip::tcp::socket socket_;
     //! Incoming data buffer.
@@ -141,7 +144,7 @@ namespace ros_imc_broker
     //! Outgoing data buffer.
     char out_buffer_[1024];
     //! IMC message parser.
-    DUNE::IMC::Parser parser_;
+    IMC::Parser parser_;
     std::string addr_;
     std::string port_;
     bool connected_;

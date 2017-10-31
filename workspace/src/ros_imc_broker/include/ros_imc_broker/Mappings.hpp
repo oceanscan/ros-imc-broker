@@ -25,19 +25,19 @@
 // ROS headers.
 #include <ros/ros.h>
 
-// DUNE headers.
-#include <DUNE/DUNE.hpp>
+// IMC headers.
+#include <IMC/Spec/AllMessages.hpp>
 
 // Local haeders.
 #include <ros_imc_broker/ImcTypes.hpp>
 
 namespace ros_imc_broker
 {
-  typedef void (*Publisher) (ros::Publisher&, const DUNE::IMC::Message*);
+  typedef void (*Publisher) (ros::Publisher&, const IMC::Message*);
 
   template <typename Type>
   static void
-  publish(ros::Publisher& publisher, const DUNE::IMC::Message* msg)
+  publish(ros::Publisher& publisher, const IMC::Message* msg)
   {
     publisher.publish(*static_cast<const Type*>(msg));
   }
@@ -51,21 +51,24 @@ namespace ros_imc_broker
     return handle.advertise<T>(topic, qsize, latch);
   }
 
+#define DECLARE_STATIC_MAP(name, ta, tb, ps)                       \
+  static std::map<ta, tb> name(ps, ps + sizeof(ps) / sizeof(ps[0]))
+
   static std::pair<unsigned, Publisher> publisher_pairs_id[] =
   {
-#define MESSAGE(id, abbrev)                                             \
-    std::pair<unsigned, Publisher>(id, &publish<DUNE::IMC::abbrev>),
-#include <DUNE/IMC/Factory.def>
+#define MESSAGE(id, abbrev, md5)                                \
+    std::pair<unsigned, Publisher>(id, &publish<IMC::abbrev>),
+#include <IMC/Spec/Factory.xdef>
   };
-  DUNE_DECLARE_STATIC_MAP(publisher_by_id, unsigned, Publisher, publisher_pairs_id);
+  DECLARE_STATIC_MAP(publisher_by_id, unsigned, Publisher, publisher_pairs_id);
 
   static std::pair<unsigned, PublisherCreator> publisher_creator_pairs[] =
   {
-#define MESSAGE(id, abbrev)                                             \
-    std::pair<unsigned, PublisherCreator>(id, &createPublisher<DUNE::IMC::abbrev>),
-#include <DUNE/IMC/Factory.def>
+#define MESSAGE(id, abbrev, md5)                                        \
+    std::pair<unsigned, PublisherCreator>(id, &createPublisher<IMC::abbrev>),
+#include <IMC/Spec/Factory.xdef>
   };
-  DUNE_DECLARE_STATIC_MAP(publisher_creators, unsigned, PublisherCreator, publisher_creator_pairs);
+  DECLARE_STATIC_MAP(publisher_creators, unsigned, PublisherCreator, publisher_creator_pairs);
 }
 
 #endif

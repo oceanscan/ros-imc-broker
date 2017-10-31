@@ -25,9 +25,6 @@
 // ROS headers.
 #include <ros/ros.h>
 
-// DUNE headers.
-#include <DUNE/DUNE.hpp>
-
 // Local headers.
 #include <ros_imc_broker/ImcTypes.hpp>
 
@@ -44,8 +41,8 @@ namespace ros_imc_broker
       state_(SM_BEGIN)
     {
       // Subscribers.
-      subscribe<SimpleController, DUNE::IMC::Announce>("IMC/In/Announce", this);
-      subscribe<SimpleController, DUNE::IMC::VehicleState>("IMC/In/VehicleState", this);
+      subscribe<SimpleController, IMC::Announce>("IMC/In/Announce", this);
+      subscribe<SimpleController, IMC::VehicleState>("IMC/In/VehicleState", this);
     }
 
     virtual
@@ -102,7 +99,7 @@ namespace ros_imc_broker
     //! Tests if a given message was sent by the controlled system.
     //! @return true if message is from controlled system, false otherwise.
     bool
-    isFromControlledSystem(const DUNE::IMC::Message& msg) const
+    isFromControlledSystem(const IMC::Message& msg) const
     {
       return msg.getSource() == system_id_;
     }
@@ -153,7 +150,7 @@ namespace ros_imc_broker
     //! Handles system announcement messages.
     //! @param[in] msg IMC announcement messages.
     void
-    on(const DUNE::IMC::Announce& msg)
+    on(const IMC::Announce& msg)
     {
       if (!systemIsResolved() && msg.sys_name == system_name_)
       {
@@ -163,12 +160,12 @@ namespace ros_imc_broker
     }
 
     void
-    on(const DUNE::IMC::VehicleState& msg)
+    on(const IMC::VehicleState& msg)
     {
       if (!isFromControlledSystem(msg))
         return;
 
-      bool service = msg.op_mode == DUNE::IMC::VehicleState::VS_SERVICE;
+      bool service = msg.op_mode == IMC::VehicleState::VS_SERVICE;
       if (service_ && !service)
         ROS_INFO("system is not idle");
       else if (!service_ && service)

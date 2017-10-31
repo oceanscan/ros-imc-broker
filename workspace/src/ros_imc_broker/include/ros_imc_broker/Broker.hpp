@@ -30,13 +30,13 @@
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
 
-// DUNE headers.
-#include <DUNE/DUNE.hpp>
+// IMC headers.
+#include <IMC/Base/Factory.hpp>
 
 // Local headers.
 #include <ros_imc_broker/Mappings.hpp>
 #include <ros_imc_broker/TcpLink.hpp>
-#include <ros_imc_broker/BrokerConfig.h>
+#include <ros_imc_broker/BrokerParamsConfig.h>
 
 namespace ros_imc_broker
 {
@@ -70,10 +70,10 @@ namespace ros_imc_broker
     //! Map of subscribers by topic.
     std::map<std::string, ros::Subscriber> subs_;
     //! Dynamic reconfigure server.
-    dynamic_reconfigure::Server<ros_imc_broker::BrokerConfig> srv_;
+    dynamic_reconfigure::Server<ros_imc_broker::BrokerParamsConfig> srv_;
 
     void
-    onReconfigure(ros_imc_broker::BrokerConfig& config, uint32_t level)
+    onReconfigure(ros_imc_broker::BrokerParamsConfig& config, uint32_t level)
     {
       ROS_INFO("reconfigure request: %s %s",
                config.server_addr.c_str(),
@@ -101,7 +101,7 @@ namespace ros_imc_broker
     {
       std::map<unsigned, PublisherCreator>::const_iterator itr = publisher_creators.find(msg_id);
       if (itr == publisher_creators.end())
-        throw DUNE::IMC::InvalidMessageId(msg_id);
+        throw IMC::InvalidMessageId(msg_id);
 
       std::string topic("IMC/In/");
       topic.append(msg_name);
@@ -112,7 +112,7 @@ namespace ros_imc_broker
     //! Publish an IMC message to the ROS message bus.
     //! @param[in] msg message instance.
     void
-    sendToRosBus(const DUNE::IMC::Message* msg)
+    sendToRosBus(const IMC::Message* msg)
     {
       std::map<unsigned, ros::Publisher>::iterator itr = pubs_.find(msg->getId());
       if (itr == pubs_.end())
@@ -151,11 +151,11 @@ namespace ros_imc_broker
     advertiseAll(void)
     {
       std::vector<std::string> abbrevs;
-      DUNE::IMC::Factory::getAbbrevs(abbrevs);
+      IMC::Factory::getAbbrevs(abbrevs);
 
       std::vector<std::string>::const_iterator itr = abbrevs.begin();
       for (; itr != abbrevs.end(); ++itr)
-        advertise(*itr, DUNE::IMC::Factory::getIdFromAbbrev(*itr));
+        advertise(*itr, IMC::Factory::getIdFromAbbrev(*itr));
     }
 
     //! Subscribe to all IMC messages received over the ROS message bus.
@@ -163,7 +163,7 @@ namespace ros_imc_broker
     subscribeAll(void)
     {
       std::vector<std::string> abbrevs;
-      DUNE::IMC::Factory::getAbbrevs(abbrevs);
+      IMC::Factory::getAbbrevs(abbrevs);
 
       std::vector<std::string>::const_iterator itr = abbrevs.begin();
       for (; itr != abbrevs.end(); ++itr)
@@ -174,14 +174,14 @@ namespace ros_imc_broker
         {
           continue;
         }
-#define MESSAGE(id, abbrev)                                             \
+#define MESSAGE(id, abbrev, md5)                                        \
         else if (*itr == #abbrev)                                       \
         {                                                               \
           ROS_DEBUG("subscribing: %s", topic.c_str());                  \
-          ros::Subscriber sub = nh_.subscribe(topic, 1000, &Broker::sendToTcpServer<DUNE::IMC::abbrev>, this); \
+          ros::Subscriber sub = nh_.subscribe(topic, 1000, &Broker::sendToTcpServer<IMC::abbrev>, this); \
           subs_.insert(std::pair<std::string, ros::Subscriber>(topic, sub)); \
         }
-#include <DUNE/IMC/Factory.def>
+#include <IMC/Spec/Factory.xdef>
       }
     }
   };
