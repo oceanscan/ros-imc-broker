@@ -19,11 +19,16 @@
 # Author: Ricardo Martins                                                 #
 ###########################################################################
 
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 MAINTAINER Ricardo Martins <rasm@oceanscan-mst.com>
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DUNE_URL=http://www.omst.pt/dune/dune-2017.11.00-x86-64bit-linux-glibc-gcc54.tar.bz2
+ENV IMCTRANS_VERSION=0.1.4
+ENV ROS_VERSION=kinetic
+
+RUN apt-get update -y && apt-get install -y lsb-release
 
 # Add ROS repository.
 RUN echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
@@ -31,31 +36,32 @@ RUN apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net --recv-key 0xB01FA1
 
 RUN apt-get update -y && apt-get install -y \
     bzip2 \
-    xz-utils \
-    zip \
-    unzip \
-    git \
-    g++-multilib \
     cmake \
-    ninja-build \
-    valgrind \
+    g++-multilib \
+    git \
     libasio-dev \
-    ros-indigo-ros-base \
-    python-rosinstall
+    ninja-build \
+    python-rosinstall \
+    python3-pip \
+    ros-$ROS_VERSION-ros-base \
+    unzip \
+    valgrind \
+    wget \
+    xz-utils \
+    zip
 
 # Initialize ROS.
 RUN rosdep init
 RUN rosdep update
-RUN echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc
+RUN echo "source /opt/ros/$ROS_VERSION/setup.bash" >> ~/.bashrc
 
-# Install DUNE.
-RUN cd /root && \
-    git clone https://github.com/LSTS/dune.git && \
-    cd dune && \
-    git checkout dune-2017.01.0-dmsmw && \
-    mkdir build && \
-    cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/opt/lsts/dune ../dune && \
-    ninja install && \
-    rm -rf /root/{dune,build}
+# Install IMC Translator.
+RUN pip3 install "imctrans==$IMCTRANS_VERSION"
 
+# Install simulator.
+RUN mkdir /opt/lsts && \
+    wget -q "$DUNE_URL" -O - | tar -C /opt/lsts -x -j -v -f - && \
+    mv /opt/lsts/dune-* /opt/lsts/dune
+
+# Add backseat config
 ADD assets/backseat.ini /opt/lsts/dune/etc
