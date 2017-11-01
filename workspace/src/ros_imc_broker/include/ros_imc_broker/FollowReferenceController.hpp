@@ -192,7 +192,7 @@ namespace ros_imc_broker
     {
       ROS_INFO("engaging follow reference");
       plan_state_id_.clear();
-      plan_id_ = "follow_tno";
+      plan_id_ = "follow_ros";
 
       IMC::PlanControl pc;
       pc.plan_id = plan_id_;
