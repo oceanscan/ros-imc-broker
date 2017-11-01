@@ -52,8 +52,9 @@ a square.
 Updating IMC definitions
 ========================
 
-To recreate the bindings for custom IMC messages, the bindings needs to be created using the python-script `imc-translator.py`. Example command:
+To recreate the bindings for custom IMC messages use *imctrans*. Example
+command:
+
 ```
-cd workspace/translator &&
-python imc-translator.py --xml=<path-to>/IMC.xml --output=../src/ros_imc_broker/include/ros_imc_broker/ImcTypes.hpp
+imctrans translate -l cpp -x <path-to>/IMC.xml -o src/ros_imc_broker/include
 ```
