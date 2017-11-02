@@ -151,6 +151,7 @@ include_directories(
 
 ## Declare a C++ executable
 add_executable(ros_imc_broker_node src/broker_node.cpp include/IMC/Base/Factory.cpp)
+add_dependencies(ros_imc_broker_node ${PROJECT_NAME}_gencfg)
 add_executable(follow_reference_node src/follow_reference_node.cpp include/IMC/Base/Factory.cpp)
 
 ## Add cmake target dependencies of the executable
