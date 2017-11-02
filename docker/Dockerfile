@@ -25,7 +25,7 @@ MAINTAINER Ricardo Martins <rasm@oceanscan-mst.com>
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DUNE_URL=http://www.omst.pt/dune/dune-2017.11.00-x86-64bit-linux-glibc-gcc54.tar.bz2
-ENV IMCTRANS_VERSION=0.1.4
+ENV IMCTRANS_VERSION=0.1.5
 ENV ROS_VERSION=kinetic
 
 RUN apt-get update -y && apt-get install -y lsb-release
