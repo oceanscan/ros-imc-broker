@@ -42,7 +42,7 @@ public:
   ParamsController(ros::NodeHandle& nh, const std::string& system_name):
     SimpleController(nh, system_name),
     state_(SM_ENTITY_LIST_QUERY),
-    entity_name_("Sidescan"),
+    entity_name_("Dummy Payload"),
     entity_id_(0)
   {
     // Subscribers.
@@ -54,9 +54,8 @@ public:
     query_entity_list_pub_ = nh.advertise<IMC::EntityList>("IMC/Out/EntityList", 1000);
 
     // Parameters.
-    config_map_["High-Frequency Channel"] = "true";
-    config_map_["Low-Frequency Channel"] = "true";
-    config_map_["Range"] = "30";
+    config_map_["Correction Factor"] = "2.0";
+    config_map_["Data Period"] = "5.0";
   }
 
   virtual
