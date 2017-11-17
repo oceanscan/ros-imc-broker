@@ -4,4 +4,5 @@
     <param name="server_port" value="32603"/>
   </node>
   <node pkg="ros_imc_broker" type="follow_reference_node" name="follow_reference_node" output="screen"/>
+  <node pkg="ros_imc_broker" type="params_changer_node" name="settings" output="screen"/>
 </launch>
