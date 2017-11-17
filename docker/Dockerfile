@@ -24,8 +24,6 @@ FROM ubuntu:16.04
 MAINTAINER Ricardo Martins <rasm@oceanscan-mst.com>
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV DUNE_URL=http://www.omst.pt/dune/dune-2017.11.00-x86-64bit-linux-glibc-gcc54.tar.bz2
-ENV IMCTRANS_VERSION=0.1.6
 ENV ROS_VERSION=kinetic
 
 RUN apt-get update -y && apt-get install -y lsb-release
@@ -56,9 +54,11 @@ RUN rosdep update
 RUN echo "source /opt/ros/$ROS_VERSION/setup.bash" >> ~/.bashrc
 
 # Install IMC Translator.
+ENV IMCTRANS_VERSION=0.1.6
 RUN pip3 install "imctrans==$IMCTRANS_VERSION"
 
 # Install simulator.
+ENV DUNE_URL=http://www.omst.pt/dune/dune-2017.11.00-dev0-x86-64bit-linux-glibc-gcc54.tar.bz2
 RUN mkdir /opt/lsts && \
     wget -q "$DUNE_URL" -O - | tar -C /opt/lsts -x -j -v -f - && \
     mv /opt/lsts/dune-* /opt/lsts/dune
