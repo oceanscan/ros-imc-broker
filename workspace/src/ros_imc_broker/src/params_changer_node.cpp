@@ -25,6 +25,7 @@
 
 // Boost headers.
 #include <boost/algorithm/string.hpp>
+#include <boost/timer.hpp>
 
 // ROS headers.
 #include <ros/ros.h>
@@ -43,15 +44,20 @@ public:
     SimpleController(nh, system_name),
     state_(SM_ENTITY_LIST_QUERY),
     entity_name_("Dummy Payload"),
-    entity_id_(0)
+    entity_id_(0),
+    wait_params_(false),
+    reset_(false)
   {
     // Subscribers.
     subscribe<ParamsController, IMC::EntityList>("IMC/In/EntityList", this);
     subscribe<ParamsController, IMC::EntityActivationState>("IMC/In/EntityActivationState", this);
+    subscribe<ParamsController, IMC::EntityParameters>("IMC/In/EntityParameters", this);
+    subscribe<ParamsController, IMC::Temperature>("IMC/In/Temperature", this);
 
     // Publishers.
     set_params_pub_ = nh.advertise<IMC::SetEntityParameters>("IMC/Out/SetEntityParameters", 1000);
     query_entity_list_pub_ = nh.advertise<IMC::EntityList>("IMC/Out/EntityList", 1000);
+    query_entity_params_pub_ = nh.advertise<IMC::QueryEntityParameters>("IMC/Out/QueryEntityParameters", 1000);
 
     // Parameters.
     config_map_["Correction Factor"] = "2.0";
@@ -66,10 +72,28 @@ public:
   void
   on(const IMC::EntityActivationState& msg)
   {
-    if (!isFromControlledSystem(msg))
-      return;
+    if (isFromControlledEntity(msg))
+      entity_act_state_ = msg;
+  }
 
-    entity_act_state_ = msg;
+  void
+  on(const IMC::EntityParameters& msg)
+  {
+    if (isFromControlledEntity(msg))
+    {
+      // load current parameters (that match desired config_map)
+      IMC::MessageList<IMC::EntityParameter>::const_iterator itr = msg.params.begin();
+      for (; itr != msg.params.end(); ++itr)
+      {
+        if (config_map_.find((*itr)->name) != config_map_.end())
+        {
+          ROS_INFO("found '%s' : '%s'", (*itr)->name.c_str(), (*itr)->value.c_str());
+          loaded_map_[(*itr)->name] = (*itr)->value;
+        }
+      }
+
+      wait_params_ = false;
+    }
   }
 
   void
@@ -95,6 +119,13 @@ public:
         break;
       }
     }
+  }
+
+  void
+  on(const IMC::Temperature& msg)
+  {
+    if (isFromControlledEntity(msg))
+      ROS_INFO("incoming data: '%s' (%s): %f", msg.getName(), entity_name_.c_str(), msg.value);
   }
 
   void
@@ -146,6 +177,17 @@ public:
     IMC::EntityList req;
     req.op = IMC::EntityList::OP_QUERY;
     query_entity_list_pub_.publish(req);
+    ros::Duration(1.0).sleep();
+  }
+
+  void
+  queryEntityParameters()
+  {
+    IMC::QueryEntityParameters req;
+    req.name = entity_name_;
+    query_entity_params_pub_.publish(req);
+    ros::Duration(1.0).sleep();
+    wait_params_ = true;
   }
 
   void
@@ -154,7 +196,7 @@ public:
     switch (state_)
     {
       case SM_ENTITY_LIST_QUERY:
-        ROS_INFO("quering list of entities");
+        ROS_INFO("querying list of entities");
         queryEntityList();
         state_ = SM_ENTITY_LIST_WAIT;
         break;
@@ -163,12 +205,52 @@ public:
         if (entity_id_ != 0)
         {
           ROS_INFO("entity id of '%s' is %u", entity_name_.c_str(), entity_id_);
-          state_ = SM_ENTITY_ACTIVATE;
+          state_ = SM_ENTITY_CONFIG;
         }
         else
         {
           state_ = SM_ENTITY_LIST_QUERY;
         }
+        break;
+
+      case SM_ENTITY_CONFIG:
+        ROS_INFO("querying list of parameters for %s", entity_name_.c_str());
+        queryEntityParameters();
+        state_ = SM_ENTITY_PARAMS_WAIT;
+        break;
+
+      case SM_ENTITY_PARAMS_WAIT:
+        if (!wait_params_)
+        {
+          ROS_INFO("compare list of parameters for %s", entity_name_.c_str());
+          state_ = SM_ENTITY_PARAMS_COMPARE;
+        }
+        else
+        {
+          state_ = SM_ENTITY_CONFIG;
+        }
+        break;
+
+      case SM_ENTITY_PARAMS_COMPARE:
+        if (compareEntityParameters())
+        {
+          ROS_INFO("entity '%s' parameters match", entity_name_.c_str());
+          if (entity_act_state_.state == IMC::EntityActivationState::EAS_INACTIVE)
+            state_ = SM_ENTITY_ACTIVATE;
+          else
+            state_ = SM_IDLE;
+        }
+        else
+        {
+          ROS_INFO("entity '%s' parameters do NOT match", entity_name_.c_str());
+          state_ = SM_ENTITY_SEND_PARAMS;
+        }
+        break;
+
+      case SM_ENTITY_SEND_PARAMS:
+        ROS_INFO("sending configuration");
+        publishParamMap(config_map_);
+        state_ = SM_ENTITY_CONFIG;
         break;
 
       case SM_ENTITY_ACTIVATE:
@@ -182,7 +264,8 @@ public:
         if (entity_act_state_.state == IMC::EntityActivationState::EAS_ACTIVE)
         {
           ROS_INFO("entity is active");
-          state_ = SM_ENTITY_CONFIG;
+          state_ = SM_IDLE;
+          start_ = boost::chrono::system_clock::now();
         }
         else if (entity_act_state_.state == IMC::EntityActivationState::EAS_ACT_FAIL)
         {
@@ -191,15 +274,26 @@ public:
         }
         break;
 
-      case SM_ENTITY_CONFIG:
-        ROS_INFO("sending configuration");
-        publishParamMap(config_map_);
-        state_ = SM_IDLE;
-        break;
-
       case SM_IDLE:
+        if (!reset_)
+        {
+          boost::chrono::duration<double> sec = boost::chrono::system_clock::now() - start_;
+          if (sec.count() > 60.0)
+            reset();
+        }
         break;
     }
+  }
+
+  //! Redefine arguments in real-time, during plan execution.
+  void
+  reset(void)
+  {
+    ROS_INFO("setting new arguments");
+    config_map_["Correction Factor"] = "25.0";
+    config_map_["Data Period"] = "15.0";
+    state_ = SM_ENTITY_CONFIG;
+    reset_ = true;
   }
 
 private:
@@ -210,9 +304,43 @@ private:
     SM_ENTITY_ACTIVATE,
     SM_ENTITY_ACTIVATE_WAIT,
     SM_ENTITY_CONFIG,
+    SM_ENTITY_PARAMS_WAIT,
+    SM_ENTITY_PARAMS_COMPARE,
+    SM_ENTITY_SEND_PARAMS,
     SM_IDLE
   };
 
+  //! Tests if current entity parameters match desired parameters.
+  //! @return true if current entity parameters match desired.
+  bool
+  compareEntityParameters(void)
+  {
+    std::map<std::string, std::string>::const_iterator it = config_map_.begin();
+    for (; it != config_map_.end(); it++)
+    {
+      if (loaded_map_.find(it->first) != loaded_map_.end())
+      {
+        if (loaded_map_[it->first] != config_map_[it->first])
+          return false;
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  //! Tests if a given message was sent by the controlled system's entity.
+  //! @return true if message is from controlled system, false otherwise.
+  bool
+  isFromControlledEntity(const IMC::Message& msg) const
+  {
+    return isFromControlledSystem(msg) && entity_id_ != 0 && msg.getSourceEntity() == entity_id_;
+  }
+
+  //! State machine state.
   State state_;
   //! Entity name.
   std::string entity_name_;
@@ -220,10 +348,20 @@ private:
   unsigned entity_id_;
   //! Last received activation state.
   IMC::EntityActivationState entity_act_state_;
-  //! Configuration map.
+  //! Configuration map (desired arguments).
   std::map<std::string, std::string> config_map_;
+  //! Loaded configuration map.
+  std::map<std::string, std::string> loaded_map_;
+  //! Waiting entity parameters.
+  bool wait_params_;
+  //! Publisher nodes.
   ros::Publisher set_params_pub_;
   ros::Publisher query_entity_list_pub_;
+  ros::Publisher query_entity_params_pub_;
+  //! Parameter redefinition timer.
+  boost::chrono::system_clock::time_point start_;
+  //! Reset parameters flag.
+  bool reset_;
 };
 
 int
