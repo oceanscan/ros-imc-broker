@@ -1,5 +1,5 @@
 //*************************************************************************
-// Copyright (C) 2016 OceanScan - Marine Systems & Technology, Lda.       *
+// Copyright (C) 2016-2017 OceanScan - Marine Systems & Technology, Lda.  *
 //*************************************************************************
 // This program is free software; you can redistribute it and/or modify   *
 // it under the terms of the GNU General Public License as published by   *
@@ -16,7 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA          *
 // 02110-1301 USA.                                                        *
 //*************************************************************************
-//Author: Ricardo Martins                                                 *
+// Author: Ricardo Martins                                                *
+// Author: José Braga                                                     *
 //*************************************************************************
 
 // ISO C++ headers.
@@ -37,12 +38,36 @@
 // Local headers.
 #include <ros_imc_broker/SimpleController.hpp>
 
+//! Class that controls an entity, including some of its parameters.
+//!
+//! Standard execution is implemented in function «updateStateMachine»
+//! through state enum «State». Expected behavior:
+//!
+//!  * query list of entities from DUNE.
+//!  * wait for arrival of entities list.
+//!  * once entity id has been resolved from entities list, query target entity parameters.
+//!  * wait for arrival of target entity parameters.
+//!  * compare loaded parameters with desired values.
+//!    -- if they do not match, send desired parameters and go back to 3)
+//!    -- if they match, activate task.
+//!  * wait for entity activation state
+//!  * once active, monitor two timeouts:
+//!    -- the first one, to reconfigure entity parameters and go to 3)
+//!    -- the final one, to deactivate entity.
+//!  * wait for entity deactivation state
+//!  * end of execution.
+//!
 class ParamsController: public ros_imc_broker::SimpleController
 {
 public:
+  //! Time to wait for entity parameters update.
+  static const float c_entity_update = 60.0f;
+  //! Time to wait for entity deactivation and end of execution.
+  static const float c_entity_deactivation = 200.0f;
+
   ParamsController(ros::NodeHandle& nh, const std::string& system_name):
     SimpleController(nh, system_name),
-    state_(SM_ENTITY_LIST_QUERY),
+    state_(SM_ENTITIES_LIST_QUERY),
     entity_name_("Dummy Payload"),
     entity_id_(0),
     wait_params_(false),
@@ -83,11 +108,13 @@ public:
     {
       // load current parameters (that match desired config_map)
       IMC::MessageList<IMC::EntityParameter>::const_iterator itr = msg.params.begin();
+      int i = 0;
       for (; itr != msg.params.end(); ++itr)
       {
         if (config_map_.find((*itr)->name) != config_map_.end())
         {
-          ROS_INFO("found '%s' : '%s'", (*itr)->name.c_str(), (*itr)->value.c_str());
+          ROS_INFO("'%s' parameter #%d -- '%s' = '%s'", entity_name_.c_str(), i++,
+                   (*itr)->name.c_str(), (*itr)->value.c_str());
           loaded_map_[(*itr)->name] = (*itr)->value;
         }
       }
@@ -125,7 +152,7 @@ public:
   on(const IMC::Temperature& msg)
   {
     if (isFromControlledEntity(msg))
-      ROS_INFO("incoming data: '%s' (%s): %f", msg.getName(), entity_name_.c_str(), msg.value);
+      ROS_INFO(" \tincoming data: '%s' (%s): %f", msg.getName(), entity_name_.c_str(), msg.value);
   }
 
   void
@@ -195,66 +222,62 @@ public:
   {
     switch (state_)
     {
-      case SM_ENTITY_LIST_QUERY:
+      case SM_ENTITIES_LIST_QUERY:
         ROS_INFO("querying list of entities");
         queryEntityList();
-        state_ = SM_ENTITY_LIST_WAIT;
+        state_ = SM_ENTITIES_LIST_WAIT;
         break;
 
-      case SM_ENTITY_LIST_WAIT:
+      case SM_ENTITIES_LIST_WAIT:
         if (entity_id_ != 0)
         {
           ROS_INFO("entity id of '%s' is %u", entity_name_.c_str(), entity_id_);
-          state_ = SM_ENTITY_CONFIG;
+          state_ = SM_ENTITY_PARAMS_QUERY;
         }
         else
         {
-          state_ = SM_ENTITY_LIST_QUERY;
+          state_ = SM_ENTITIES_LIST_QUERY;
         }
         break;
 
-      case SM_ENTITY_CONFIG:
-        ROS_INFO("querying list of parameters for %s", entity_name_.c_str());
+      case SM_ENTITY_PARAMS_QUERY:
+        ROS_INFO("'%s' query list of parameters", entity_name_.c_str());
         queryEntityParameters();
         state_ = SM_ENTITY_PARAMS_WAIT;
         break;
 
       case SM_ENTITY_PARAMS_WAIT:
         if (!wait_params_)
-        {
-          ROS_INFO("compare list of parameters for %s", entity_name_.c_str());
           state_ = SM_ENTITY_PARAMS_COMPARE;
-        }
         else
-        {
-          state_ = SM_ENTITY_CONFIG;
-        }
+          state_ = SM_ENTITY_PARAMS_QUERY;
+
         break;
 
       case SM_ENTITY_PARAMS_COMPARE:
         if (compareEntityParameters())
         {
-          ROS_INFO("entity '%s' parameters match", entity_name_.c_str());
+          ROS_WARN("'%s' parameters match", entity_name_.c_str());
           if (entity_act_state_.state == IMC::EntityActivationState::EAS_INACTIVE)
             state_ = SM_ENTITY_ACTIVATE;
           else
-            state_ = SM_IDLE;
+            state_ = SM_RUNNING;
         }
         else
         {
-          ROS_INFO("entity '%s' parameters do NOT match", entity_name_.c_str());
-          state_ = SM_ENTITY_SEND_PARAMS;
+          ROS_WARN("'%s' parameters do not match", entity_name_.c_str());
+          state_ = SM_ENTITY_PARAMS_SEND;
         }
         break;
 
-      case SM_ENTITY_SEND_PARAMS:
-        ROS_INFO("sending configuration");
+      case SM_ENTITY_PARAMS_SEND:
+        ROS_WARN("'%s' configure parameters", entity_name_.c_str());
         publishParamMap(config_map_);
-        state_ = SM_ENTITY_CONFIG;
+        state_ = SM_ENTITY_PARAMS_QUERY;
         break;
 
       case SM_ENTITY_ACTIVATE:
-        ROS_INFO("requesting activation of '%s'", entity_name_.c_str());
+        ROS_INFO("'%s' request activation", entity_name_.c_str());
         entity_act_state_.clear();
         requestActivation();
         state_ = SM_ENTITY_ACTIVATE_WAIT;
@@ -263,51 +286,95 @@ public:
       case SM_ENTITY_ACTIVATE_WAIT:
         if (entity_act_state_.state == IMC::EntityActivationState::EAS_ACTIVE)
         {
-          ROS_INFO("entity is active");
-          state_ = SM_IDLE;
+          ROS_INFO("'%s' is active", entity_name_.c_str());
+          state_ = SM_RUNNING;
           start_ = boost::chrono::system_clock::now();
+          ROS_WARN("'%s' parameters will be configured in %.1f seconds", entity_name_.c_str(), c_entity_update);
+          ROS_WARN("'%s' will be deactivated in %.1f seconds", entity_name_.c_str(), c_entity_deactivation);
         }
         else if (entity_act_state_.state == IMC::EntityActivationState::EAS_ACT_FAIL)
         {
-          ROS_INFO("failed to activate entity: %s", entity_act_state_.error.c_str());
+          ROS_ERROR("'%s' failed to activate entity", entity_act_state_.error.c_str());
           state_ = SM_ENTITY_ACTIVATE;
         }
         break;
 
-      case SM_IDLE:
+      case SM_RUNNING:
+        // checking if it is time to reset entity parameters.
         if (!reset_)
         {
           boost::chrono::duration<double> sec = boost::chrono::system_clock::now() - start_;
-          if (sec.count() > 60.0)
-            reset();
+          if (sec.count() > c_entity_update)
+            resetParameters();
+        }
+
+        // check if it is time to deactivate and go home.
+        if (reset_)
+        {
+          boost::chrono::duration<double> sec = boost::chrono::system_clock::now() - start_;
+          if (sec.count() > c_entity_deactivation)
+          {
+            if (entity_act_state_.state == IMC::EntityActivationState::EAS_ACTIVE)
+              state_ = SM_ENTITY_DEACTIVATE;
+          }
+        }
+
+        break;
+
+      case SM_ENTITY_DEACTIVATE:
+        ROS_WARN("'%s' request deactivation", entity_name_.c_str());
+        entity_act_state_.clear();
+        requestDeactivation();
+        state_ = SM_ENTITY_DEACTIVATE_WAIT;
+        break;
+
+      case SM_ENTITY_DEACTIVATE_WAIT:
+        if (entity_act_state_.state == IMC::EntityActivationState::EAS_INACTIVE)
+        {
+          ROS_INFO("'%s' is deactivated", entity_name_.c_str());
+          ROS_WARN(" -- finished execution --");
+          state_ = SM_END;
+        }
+        else if (entity_act_state_.state == IMC::EntityActivationState::EAS_DEACT_FAIL)
+        {
+          ROS_ERROR("'%s' failed to activate entity", entity_act_state_.error.c_str());
+          state_ = SM_ENTITY_DEACTIVATE;
         }
         break;
-    }
-  }
 
-  //! Redefine arguments in real-time, during plan execution.
-  void
-  reset(void)
-  {
-    ROS_INFO("setting new arguments");
-    config_map_["Correction Factor"] = "25.0";
-    config_map_["Data Period"] = "15.0";
-    state_ = SM_ENTITY_CONFIG;
-    reset_ = true;
+      case SM_END:
+        break;
+
+    }
   }
 
 private:
   enum State
   {
-    SM_ENTITY_LIST_QUERY,
-    SM_ENTITY_LIST_WAIT,
-    SM_ENTITY_ACTIVATE,
-    SM_ENTITY_ACTIVATE_WAIT,
-    SM_ENTITY_CONFIG,
+    //! Query entity list.
+    SM_ENTITIES_LIST_QUERY,
+    //! Wait for entity list reply.
+    SM_ENTITIES_LIST_WAIT,
+    //! Query desired entity parameters.
+    SM_ENTITY_PARAMS_QUERY,
+    //! Wait for desired entity parameters reply.
     SM_ENTITY_PARAMS_WAIT,
+    //! Compare loaded entity parameters with desired.
     SM_ENTITY_PARAMS_COMPARE,
-    SM_ENTITY_SEND_PARAMS,
-    SM_IDLE
+    //! Send new parameters if they mismatch.
+    SM_ENTITY_PARAMS_SEND,
+    //! Activate desired entity.
+    SM_ENTITY_ACTIVATE,
+    //! Wait for entity activation reply.
+    SM_ENTITY_ACTIVATE_WAIT,
+    //! Entity is running.
+    SM_RUNNING,
+    //! Deactivate entity.
+    SM_ENTITY_DEACTIVATE,
+    //! Wait for entity deactivation reply.
+    SM_ENTITY_DEACTIVATE_WAIT,
+    //! Finished execution.
+    SM_END
   };
 
   //! Tests if current entity parameters match desired parameters.
@@ -340,6 +407,17 @@ private:
     return isFromControlledSystem(msg) && entity_id_ != 0 && msg.getSourceEntity() == entity_id_;
   }
 
+  //! Redefine parameters in real-time, during plan execution.
+  void
+  resetParameters(void)
+  {
+    ROS_INFO("'%s' configure new parameters", entity_name_.c_str());
+    config_map_["Correction Factor"] = "25.0";
+    config_map_["Data Period"] = "15.0";
+    state_ = SM_ENTITY_PARAMS_QUERY;
+    reset_ = true;
+  }
+
   //! State machine state.
   State state_;
   //! Entity name.
@@ -348,7 +426,7 @@ private:
   unsigned entity_id_;
   //! Last received activation state.
   IMC::EntityActivationState entity_act_state_;
-  //! Configuration map (desired arguments).
+  //! Configuration map (desired parameters).
   std::map<std::string, std::string> config_map_;
   //! Loaded configuration map.
   std::map<std::string, std::string> loaded_map_;
