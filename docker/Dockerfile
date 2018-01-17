@@ -58,7 +58,7 @@ ENV IMCTRANS_VERSION=0.1.6
 RUN pip3 install "imctrans==$IMCTRANS_VERSION"
 
 # Install simulator.
-ENV DUNE_URL=http://www.omst.pt/dune/dune-2017.11.10-x86-64bit-linux-glibc-gcc54.tar.bz2
+ENV DUNE_URL=http://www.omst.pt/dune/dune-2018.01.00-x86-64bit-linux-glibc-gcc54.tar.bz2
 RUN mkdir /opt/lsts && \
     wget -q "$DUNE_URL" -O - | tar -C /opt/lsts -x -j -v -f - && \
     mv /opt/lsts/dune-* /opt/lsts/dune
