@@ -45,9 +45,15 @@ namespace IMC
     }
 
     inline
-    ~ByteBuffer(void)
+    ~ByteBuffer()
     {
       std::free(m_buffer);
+    }
+
+    inline size_t
+    getCapacity() const
+    {
+      return m_capacity;
     }
 
     inline void
@@ -68,21 +74,35 @@ namespace IMC
     }
 
     inline size_t
-    getSize(void)
+    getSize()
     {
       return m_size;
     }
 
     inline uint8_t*
-    getBuffer(void)
+    getBuffer()
     {
       return m_buffer;
     }
 
     inline char*
-    getBufferSigned(void)
+    getBufferSigned()
     {
       return (char*)m_buffer;
+    }
+
+    void
+    append(const uint8_t* data, size_t size)
+    {
+      grow(m_size + size);
+      std::memcpy(m_buffer + m_size, data, size);
+      m_size += size;
+    }
+
+    void
+    appendSigned(const char* data, size_t size)
+    {
+      append((uint8_t*)data, size);
     }
 
    private:

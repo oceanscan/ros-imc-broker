@@ -17,7 +17,7 @@
 //***************************************************************************
 // Automatically generated.                                                 *
 //***************************************************************************
-// IMC XML MD5: 4a9faba4a5957552c96963d5ea855de1                            *
+// IMC XML MD5: 74f41081eac3414e0a982ae6a8fe7347                            *
 //***************************************************************************
 
 #ifndef IMC_MACROS_HPP_INCLUDED_
@@ -613,5 +613,7 @@
 #define IMC_COLOREDDISSOLVEDORGANICMATTER (2003)
 //! Fluorescent Dissolved Organic Matter Identifier.
 #define IMC_FLUORESCENTDISSOLVEDORGANICMATTER (2004)
+//! Transmit Iridium Message (Extended) Identifier.
+#define IMC_IRIDIUMMSGTXEXTENDED (2005)
 
 #endif

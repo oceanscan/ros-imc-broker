@@ -20,8 +20,8 @@
 // IMC XML MD5: 74f41081eac3414e0a982ae6a8fe7347                            *
 //***************************************************************************
 
-#ifndef IMC_QUERYENTITYPARAMETERS_HPP_INCLUDED_
-#define IMC_QUERYENTITYPARAMETERS_HPP_INCLUDED_
+#ifndef IMC_IRIDIUMMSGTXEXTENDED_HPP_INCLUDED_
+#define IMC_IRIDIUMMSGTXEXTENDED_HPP_INCLUDED_
 
 // ISO C++ 98 headers.
 #include <ostream>
@@ -40,56 +40,64 @@
 
 namespace IMC
 {
-  //! QueryEntityParameters.
-  class QueryEntityParameters: public Message
+  //! Transmit Iridium Message (Extended).
+  class IridiumMsgTxExtended: public Message
   {
   public:
-    //! Entity Name.
-    std::string name;
-    //! Visibility.
-    std::string visibility;
-    //! Scope.
-    std::string scope;
+    //! Request Identifier.
+    uint16_t req_id;
+    //! Time to live.
+    uint16_t ttl;
+    //! Expiration Time.
+    uint32_t expiration;
+    //! Destination Identifier.
+    std::string destination;
+    //! Data.
+    std::vector<char> data;
 
     static uint16_t
     getIdStatic(void)
     {
-      return 803;
+      return 2005;
     }
 
-    static QueryEntityParameters*
+    static IridiumMsgTxExtended*
     cast(Message* msg__)
     {
-      return (QueryEntityParameters*)msg__;
+      return (IridiumMsgTxExtended*)msg__;
     }
 
-    QueryEntityParameters(void)
+    IridiumMsgTxExtended(void)
     {
-      m_header.mgid = QueryEntityParameters::getIdStatic();
+      m_header.mgid = IridiumMsgTxExtended::getIdStatic();
       clear();
     }
 
-    QueryEntityParameters*
+    IridiumMsgTxExtended*
     clone(void) const
     {
-      return new QueryEntityParameters(*this);
+      return new IridiumMsgTxExtended(*this);
     }
 
     void
     clear(void)
     {
-      name.clear();
-      visibility.clear();
-      scope.clear();
+      req_id = 0;
+      ttl = 0;
+      expiration = 0;
+      destination.clear();
+      data.clear();
     }
 
     bool
     fieldsEqual(const Message& msg__) const
     {
-      const IMC::QueryEntityParameters& other__ = static_cast<const QueryEntityParameters&>(msg__);
-      if (name != other__.name) return false;
-      if (visibility != other__.visibility) return false;
-      if (scope != other__.scope) return false;
+      const IMC::IridiumMsgTxExtended& other__ = static_cast<const IridiumMsgTxExtended&>(msg__);
+      if (req_id != other__.req_id) return false;
+      if (ttl != other__.ttl) return false;
+      if (expiration != other__.expiration) return false;
+      if (destination != other__.destination) return false;
+      if (data != other__.data) return false;
       return true;
     }
 
@@ -97,9 +105,11 @@ namespace IMC
     serializeFields(uint8_t* bfr__) const
     {
       uint8_t* ptr__ = bfr__;
-      ptr__ += IMC::serialize(name, ptr__);
-      ptr__ += IMC::serialize(visibility, ptr__);
-      ptr__ += IMC::serialize(scope, ptr__);
+      ptr__ += IMC::serialize(req_id, ptr__);
+      ptr__ += IMC::serialize(ttl, ptr__);
+      ptr__ += IMC::serialize(expiration, ptr__);
+      ptr__ += IMC::serialize(destination, ptr__);
+      ptr__ += IMC::serialize(data, ptr__);
       return ptr__;
     }
 
@@ -107,9 +117,11 @@ namespace IMC
     deserializeFields(const uint8_t* bfr__, size_t size__)
     {
       const uint8_t* start__ = bfr__;
-      bfr__ += IMC::deserialize(name, bfr__, size__);
-      bfr__ += IMC::deserialize(visibility, bfr__, size__);
-      bfr__ += IMC::deserialize(scope, bfr__, size__);
+      bfr__ += IMC::deserialize(req_id, bfr__, size__);
+      bfr__ += IMC::deserialize(ttl, bfr__, size__);
+      bfr__ += IMC::deserialize(expiration, bfr__, size__);
+      bfr__ += IMC::deserialize(destination, bfr__, size__);
+      bfr__ += IMC::deserialize(data, bfr__, size__);
       return bfr__ - start__;
     }
 
@@ -117,42 +129,46 @@ namespace IMC
     reverseDeserializeFields(const uint8_t* bfr__, size_t size__)
     {
       const uint8_t* start__ = bfr__;
-      bfr__ += IMC::reverseDeserialize(name, bfr__, size__);
-      bfr__ += IMC::reverseDeserialize(visibility, bfr__, size__);
-      bfr__ += IMC::reverseDeserialize(scope, bfr__, size__);
+      bfr__ += IMC::reverseDeserialize(req_id, bfr__, size__);
+      bfr__ += IMC::reverseDeserialize(ttl, bfr__, size__);
+      bfr__ += IMC::reverseDeserialize(expiration, bfr__, size__);
+      bfr__ += IMC::reverseDeserialize(destination, bfr__, size__);
+      bfr__ += IMC::reverseDeserialize(data, bfr__, size__);
       return bfr__ - start__;
     }
 
     uint16_t
     getId(void) const
     {
-      return QueryEntityParameters::getIdStatic();
+      return IridiumMsgTxExtended::getIdStatic();
     }
 
     const char*
     getName(void) const
     {
-      return "QueryEntityParameters";
+      return "IridiumMsgTxExtended";
     }
 
     size_t
     getFixedSerializationSize(void) const
     {
-      return 0;
+      return 8;
     }
 
     size_t
     getVariableSerializationSize(void) const
     {
-      return IMC::getSerializationSize(name) + IMC::getSerializationSize(visibility) + IMC::getSerializationSize(scope);
+      return IMC::getSerializationSize(destination) + IMC::getSerializationSize(data);
     }
 
     void
     fieldsToJSON(std::ostream& os__, unsigned nindent__) const
     {
-      IMC::toJSON(os__, "name", name, nindent__);
-      IMC::toJSON(os__, "visibility", visibility, nindent__);
-      IMC::toJSON(os__, "scope", scope, nindent__);
+      IMC::toJSON(os__, "req_id", req_id, nindent__);
+      IMC::toJSON(os__, "ttl", ttl, nindent__);
+      IMC::toJSON(os__, "expiration", expiration, nindent__);
+      IMC::toJSON(os__, "destination", destination, nindent__);
+      IMC::toJSON(os__, "data", data, nindent__);
     }
   };
 }

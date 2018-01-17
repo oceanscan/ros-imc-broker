@@ -17,7 +17,7 @@
 //***************************************************************************
 // Automatically generated.                                                 *
 //***************************************************************************
-// IMC XML MD5: 4a9faba4a5957552c96963d5ea855de1                            *
+// IMC XML MD5: 74f41081eac3414e0a982ae6a8fe7347                            *
 //***************************************************************************
 
 MESSAGE(1, EntityState, "17c4984e9f0df11f474cf81b79009e16")
@@ -134,7 +134,7 @@ MESSAGE(301, SetThrusterActuation, "8542ebbd184b6d70b96e2b5b8780336d")
 MESSAGE(302, SetServoPosition, "e01d30f33039642f2df227a230cb6540")
 MESSAGE(303, SetControlSurfaceDeflection, "0cf430d2df7aa75e7d638a8b8c896e98")
 MESSAGE(304, RemoteActionsRequest, "2f1c014be180374e2ff2061423f47f5d")
-MESSAGE(305, RemoteActions, "9d38288da40b7d1653318f0fc068cea4")
+MESSAGE(305, RemoteActions, "7685cdd6864c9f84dd16b7ae6438c2ff")
 MESSAGE(306, ButtonEvent, "c6d909fa3261ddb82568e5c9a3f9adc4")
 MESSAGE(307, LcdControl, "b3100c671625bf49b38c1c3e8d8c65a9")
 MESSAGE(308, PowerOperation, "31bb77bce399fcdbac649ede0e3c589d")
@@ -156,7 +156,7 @@ MESSAGE(356, GpsFixRejection, "102b2d86dfe4ac2a08bea17ea3664de6")
 MESSAGE(357, LblRangeAcceptance, "04a7a4165357a12109b25a0af27a30f6")
 MESSAGE(358, DvlRejection, "f69445b335036f1f1338b223ee8a4a09")
 MESSAGE(360, LblEstimate, "f73ebf3fcd85bd94a5fd4309d57c8816")
-MESSAGE(361, AlignmentState, "6318f269145255cd346c3182121488c4")
+MESSAGE(361, AlignmentState, "5f0dc1b2ac716c3bde04c1ae47d8eb13")
 MESSAGE(362, GroupStreamVelocity, "e05335feafcde7509cabec4ac50541fd")
 MESSAGE(363, Airflow, "2b75227fab605ea0cb893e706b858c9e")
 MESSAGE(400, DesiredHeading, "a006e1b0973278772be5e066c0e36c2c")
@@ -205,7 +205,7 @@ MESSAGE(476, FormationParameters, "cb4999c87225c488e6de78756a3b3baa")
 MESSAGE(477, FormationPlanExecution, "34b3a187d207ab09a387e650270a53ff")
 MESSAGE(478, FollowReference, "96d5f10d7383739a3164e071ce604903")
 MESSAGE(479, Reference, "65f53993d1f3e60a4d033c4446489713")
-MESSAGE(480, FollowRefState, "0512995d211f82eafae5fe81a11a4c86")
+MESSAGE(480, FollowRefState, "8fe985f28bea5db3b0d2307ff6f6e01b")
 MESSAGE(481, FormationMonitor, "755c9ae7d1d26377c0ddfaede9ae782b")
 MESSAGE(482, RelativeState, "52ecf84cfa31a8bbad56f15e6fdd92a5")
 MESSAGE(483, Dislodge, "c565909736fa362777859ae789d6176e")
@@ -315,4 +315,5 @@ MESSAGE(2001, GpioStateGet, "dbf911903069e64e64a930d3de53ba5f")
 MESSAGE(2002, GpioStateSet, "9acedd133bd0057b2c58e5266b82018d")
 MESSAGE(2003, ColoredDissolvedOrganicMatter, "1b937e29e9988f02502000895e624b17")
 MESSAGE(2004, FluorescentDissolvedOrganicMatter, "ded9f89d3d7630a293379f7099fe3d6f")
+MESSAGE(2005, IridiumMsgTxExtended, "8102f5c1cc344a211d9bc6b9e63b0b34")
 #undef MESSAGE

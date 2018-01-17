@@ -36,13 +36,13 @@ namespace IMC
   class Parser
   {
   public:
-    Parser(void)
+    Parser()
     {
       reset();
     }
 
     void
-    reset(void)
+    reset()
     {
       m_stage = PS_SYNC;
       m_pos = 0;
@@ -95,7 +95,7 @@ namespace IMC
         }
 
         // on to c_payload stage
-        if (n < m_header.size + IMC_CONST_HEADER_SIZE + IMC_CONST_FOOTER_SIZE)
+        if (n < (size_t)(m_header.size + IMC_CONST_HEADER_SIZE + IMC_CONST_FOOTER_SIZE))
           break;  // need more data
 
         // all payload data available

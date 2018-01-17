@@ -17,7 +17,7 @@
 //***************************************************************************
 // Automatically generated.                                                 *
 //***************************************************************************
-// IMC XML MD5: 4a9faba4a5957552c96963d5ea855de1                            *
+// IMC XML MD5: 74f41081eac3414e0a982ae6a8fe7347                            *
 //***************************************************************************
 
 #ifndef IMC_ALIGNMENTSTATE_HPP_INCLUDED_
@@ -52,7 +52,11 @@ namespace IMC
       //! Aligned.
       AS_ALIGNED = 1,
       //! Not Supported.
-      AS_NOT_SUPPORTED = 2
+      AS_NOT_SUPPORTED = 2,
+      //! Aligning.
+      AS_ALIGNING = 3,
+      //! Wrong Medium.
+      AS_WRONG_MEDIUM = 4
     };
 
     //! State.

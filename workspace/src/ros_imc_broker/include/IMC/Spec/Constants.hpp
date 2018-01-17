@@ -17,18 +17,18 @@
 //***************************************************************************
 // Automatically generated.                                                 *
 //***************************************************************************
-// IMC XML MD5: 4a9faba4a5957552c96963d5ea855de1                            *
+// IMC XML MD5: 74f41081eac3414e0a982ae6a8fe7347                            *
 //***************************************************************************
 
 #ifndef IMC_CONSTANTS_HPP_INCLUDED_
 #define IMC_CONSTANTS_HPP_INCLUDED_
 
 //! IMC version string.
-#define IMC_CONST_VERSION "5.4.16"
+#define IMC_CONST_VERSION "5.4.19"
 //! Git repository information.
-#define IMC_CONST_GIT_INFO "2017-03-07 c768451  (HEAD -> imc-5.4.16, tag: imc-5.4.16)"
+#define IMC_CONST_GIT_INFO "2018-01-17 3209ca1  (HEAD -> master, origin/master, origin/HEAD)"
 //! MD5 sum of XML specification file.
-#define IMC_CONST_MD5 "4a9faba4a5957552c96963d5ea855de1"
+#define IMC_CONST_MD5 "74f41081eac3414e0a982ae6a8fe7347"
 //! Synchronization number.
 #define IMC_CONST_SYNC 0xFE54
 //! Reversed synchronization number.

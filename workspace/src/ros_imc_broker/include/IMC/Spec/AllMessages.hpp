@@ -17,7 +17,7 @@
 //***************************************************************************
 // Automatically generated.                                                 *
 //***************************************************************************
-// IMC XML MD5: 4a9faba4a5957552c96963d5ea855de1                            *
+// IMC XML MD5: 74f41081eac3414e0a982ae6a8fe7347                            *
 //***************************************************************************
 
 #ifndef IMC_ALLMESSAGES_HPP_INCLUDED_
@@ -318,5 +318,6 @@
 #include <IMC/Spec/GpioStateSet.hpp>
 #include <IMC/Spec/ColoredDissolvedOrganicMatter.hpp>
 #include <IMC/Spec/FluorescentDissolvedOrganicMatter.hpp>
+#include <IMC/Spec/IridiumMsgTxExtended.hpp>
 
 #endif

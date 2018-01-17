@@ -121,6 +121,36 @@ namespace IMC
       return deserializePayload(hdr, bfr.getBuffer(), IMC_CONST_HEADER_SIZE + remaining, 0);
     }
 
+    static Message*
+    deserialize(std::istream& ifs)
+    {
+      std::vector<char> data;
+
+      // Get the message header.
+      data.resize(IMC_CONST_HEADER_SIZE);
+      ifs.read(&data[0], IMC_CONST_HEADER_SIZE);
+
+      // If we're at the EOF there's nothing more to do.
+      if (ifs.eof())
+        return NULL;
+
+      if (ifs.gcount() < IMC_CONST_HEADER_SIZE)
+        throw BufferTooShort();
+
+      Header hdr;
+      deserializeHeader(hdr, (uint8_t*)&data[0], IMC_CONST_HEADER_SIZE);
+
+      // Get remaining data.
+      std::streamsize remaining = hdr.size + IMC_CONST_FOOTER_SIZE;
+      data.resize(IMC_CONST_HEADER_SIZE + remaining);
+      ifs.read(&data[IMC_CONST_HEADER_SIZE], remaining);
+
+      if (ifs.gcount() < remaining)
+        throw BufferTooShort();
+
+      return deserializePayload(hdr, (uint8_t*)&data[0], IMC_CONST_HEADER_SIZE + remaining, 0);
+    }
+
     static size_t
     serializeHeader(const Message* msg, uint8_t* bfr, size_t bfr_len)
     {
