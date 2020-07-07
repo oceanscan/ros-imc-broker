@@ -58,9 +58,9 @@ class ParamsController: public ros_imc_broker::SimpleController
 {
 public:
   //! Time to wait for entity parameters update.
-  static const float c_entity_update = 60.0f;
+  static constexpr float c_entity_update = 60.0f;
   //! Time to wait for entity deactivation and end of execution.
-  static const float c_entity_deactivation = 200.0f;
+  static constexpr float c_entity_deactivation = 200.0f;
 
   ParamsController(ros::NodeHandle& nh, const std::string& system_name):
     SimpleController(nh, system_name),
