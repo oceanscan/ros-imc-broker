@@ -19,14 +19,14 @@
 # Author: Ricardo Martins                                                 #
 ###########################################################################
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 MAINTAINER Ricardo Martins <rasm@oceanscan-mst.com>
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV ROS_VERSION=kinetic
+ENV ROS_VERSION=melodic
 
-RUN apt-get update -y && apt-get install -y lsb-release
+RUN apt-get update -y && apt-get install -y lsb-release gnupg
 
 # Add ROS repository.
 RUN echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
@@ -42,6 +42,7 @@ RUN apt-get update -y && apt-get install -y \
     python-rosinstall \
     python3-pip \
     ros-$ROS_VERSION-ros-base \
+    python-rosdep \
     unzip \
     valgrind \
     wget \
@@ -52,6 +53,9 @@ RUN apt-get update -y && apt-get install -y \
 RUN rosdep init
 RUN rosdep update
 RUN echo "source /opt/ros/$ROS_VERSION/setup.bash" >> ~/.bashrc
+
+# To allow building ROS packages from source
+RUN pip3 install -U rosinstall vcstools rospkg
 
 # Install IMC Translator.
 ENV IMCTRANS_VERSION=0.1.6
