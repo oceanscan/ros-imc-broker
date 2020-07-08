@@ -21,8 +21,8 @@
 ###########################################################################
 
 TAG='ros-imc-broker'
-VERSION='2017.11.00'
-VOLUME="$PWD/../workspace"
+VERSION='2020.07.00'
+VOLUME="$(realpath $PWD/..)"
 
 build()
 {
@@ -31,14 +31,21 @@ build()
 
 shell()
 {
+        VOLPCK=''
+        for fx in cfg launch package.xml src CMakeLists.txt include LICENSE README.md start.bash; do
+                VOLPCK="$VOLPCK -v $VOLUME/$fx:$VOLUME/tmp/workspace/src/$TAG/$fx";
+        done
+        #-v "$VOLUME:$VOLUME/tmp/workspace/src/$TAG" \
+
 	docker run \
            --rm \
-           -w "$VOLUME" \
+           -w "$VOLUME/tmp/workspace" \
            -i \
            -a stdin \
            -a stdout \
-           -v "$VOLUME:$VOLUME" \
-           -v "$VOLUME/dune-log:/opt/lsts/dune/log" \
+           -v "$VOLUME/tmp/workspace:$VOLUME/tmp/workspace" \
+           $VOLPCK \
+	   -v "$VOLUME/tmp/dune-log:/opt/lsts/dune/log" \
            -t "$TAG:$VERSION"
 }
 
